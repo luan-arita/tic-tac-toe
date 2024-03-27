@@ -1,3 +1,6 @@
+import heuristic_ai
+import random
+
 def new_board():
     board = []
     for i in range(3):
@@ -17,7 +20,7 @@ def render(board):
     print('  ' + 12 * '-')
     for x, row in enumerate(rows):
         print(str(x) + '|', end = '')
-        for y, item in enumerate(rows):
+        for y, item in enumerate(row):
             if rows[x][y] == None:
                 rows[x][y] = ' '
             if y == 2:
@@ -27,42 +30,19 @@ def render(board):
         print('|')
     print('  ' + 12 * '-')
 
-def get_move():
-    x = input("What is your move's X co-ordinate? ")
-    y = input("What is your move's Y co-ordinate? ")
-    return (x, y)
 
 def make_move(board, coords, player):
     x, y = int(coords[1]), int(coords[0])
-
     if board[x][y] is not None:
         raise Exception("Illegal Move!")
-    
     else:
         board[x][y] = player
 
     return board
 
-def get_all_line_coords():
-    cols = []
-    for x in range(0, 3):
-        col = []
-        for y in range(0,3):
-            col.append((x,y))
-        cols.append(col)
-
-    rows = []
-    for y in range(0, 3):
-        row = []
-        for x in range(0, 3):
-            row.append((x, y))
-        rows.append(row)
-    
-    diagonals = [[(0, 0), (1, 1), (2, 2)], [(0, 2), (1, 1), (2, 0)]]
-    return cols + rows + diagonals
 
 def get_winner(board):
-    all_line = get_all_line_coords()
+    all_line = heuristic_ai.get_all_line_coords()
     for i in all_line:
         line_values = [board[x][y] for (x,y) in i]
 
@@ -79,19 +59,24 @@ def is_board_full(board):
     return True
 
 
-def play():
+def play(player1, player2):
     board = new_board()
-    #players = [(player_1, 'X'), (player_2, 'O')]
-    players = ['X', 'O']
+    players = [[player1, 'X'], [player2, 'O']]
+    #players = ['X', 'O']
     turnNumber = 0
 
     while True:
         x = turnNumber % 2
-        print("It's", players[x], "turn.")
-        move = get_move()
-        make_move(board, move, players[x])
-        render(board)
 
+        print("It's", players[x][1], "turn.")
+        player = players[x][1]
+        if x == 0: #Player1's turn
+            move = player1(board, player)
+        elif x == 1:
+            move = player2(board, player)
+        print(move)
+        make_move(board, move, player)
+        render(board)
 
         winner = get_winner(board)
         if winner is not None:
@@ -104,5 +89,45 @@ def play():
             break
         turnNumber += 1
 
+def repeated_play(player1, player2):
+    board = new_board()
+    players = [[player1, 'X'], [player2, 'O']]
+    turnNumber = 0
 
-play()
+    while True:
+        x = turnNumber % 2
+        player = players[x][1]
+        if x == 0: #Player1's turn
+            move = player1(board, player)
+        elif x == 1:
+            move = player2(board, player)
+        make_move(board, move, player)
+
+        winner = get_winner(board)
+        if winner is not None:
+            return winner
+        if is_board_full(board):
+            return 0
+        turnNumber += 1
+
+#play(heuristic_ai.random_ai, heuristic_ai.finds_winning_and_losing_moves_ai)
+        
+def repeated_battle(player1, player2, battle_count):
+    i = 0
+    player1_win = 0
+    player2_win = 0
+    draw = 0
+    while i < battle_count:
+        result = repeated_play(player1, player2)
+        if result == 'X':
+            player1_win += 1
+        elif result == 'O':
+            player2_win += 1
+        else:
+            draw += 1
+        i += 1
+    print("Player 1 wins:", player1_win)
+    print("Player 2 wins:", player2_win)
+    print("Draws:", draw)
+
+repeated_battle(heuristic_ai.blocks_opponent_winning_moves_ai, heuristic_ai.finds_winning_and_losing_moves_ai, 1000)
